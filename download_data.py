@@ -18,6 +18,7 @@ def download_extract(url, into):
     with tarfile.open(fname) as f:
         f.extractall(path=into)
 
+
 if __name__ == '__main__':
     baseurl = 'https://omnomnom.vision.rwth-aachen.de/data/tosato/'
     datadir = here('data')
