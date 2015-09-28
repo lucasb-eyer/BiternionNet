@@ -52,3 +52,10 @@ Results:
 Given the above, I exhaustively searched for mirroring in the dataset but found none, meaning that mirroring is a valid data augmentation step.
 
 Besides the above, this notebook also plots the label distributions, which is mildly interesting.
+
+## `prepare_data.py`
+
+Simply run this script without any arguments.
+It will load all the raw data, apply horizontal flip augmentation and then save the data into gzipped pickles for easier use from notebooks.
+This can take some time, even on fast machines.
+It's not optimized and took ~50min on my high-end desktop, but it's a one-off thing so just read some paper while it's working.
