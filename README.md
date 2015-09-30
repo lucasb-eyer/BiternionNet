@@ -36,9 +36,9 @@ ipython notebook
 Simply running this file will download and extract all benchmark datasets necessary for the comparisons done in the paper.
 You *need* to run this file before most of the notebooks will work.
 
-## `Tosato Inspect.ipynb`
+## `Inspection - Tosato Classification.ipynb`
 
-While browsing through Tosato's datasets, I noticed some curious filenames, and used this notebook to investigate dataset-weirdnesses.
+While browsing through Tosato's classification datasets, I noticed some curious filenames, and used this notebook to investigate dataset-weirdnesses.
 Note that I did not attempt to fix any of the weirdness, as it would render comparisons meaningless.
 
 Results:
