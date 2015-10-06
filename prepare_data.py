@@ -7,6 +7,7 @@ import inspect
 import json
 import pickle
 import gzip
+from os.path import join as pjoin
 
 import cv2
 import numpy as np
@@ -15,7 +16,7 @@ from sklearn.preprocessing import LabelEncoder
 
 def here(f):
     me = inspect.getsourcefile(here)
-    return os.path.join(os.path.dirname(os.path.abspath(me)), f)
+    return pjoin(os.path.dirname(os.path.abspath(me)), f)
 
 
 def imread(fname, resize=None):
@@ -34,11 +35,11 @@ def imread(fname, resize=None):
 
 
 def loadall(datadir, data):
-    return zip(*[[imread(os.path.join(datadir, name)), lbl, name] for lbl, files in data.items() for name in files])
+    return zip(*[[imread(pjoin(datadir, name)), lbl, name] for lbl, files in data.items() for name in files])
 
 
-def load(datadir, datafile):
-    data = json.load(open(os.path.join(datadir, datafile)))
+def load_tosato(datadir, datafile):
+    data = json.load(open(pjoin(datadir, datafile)))
 
     tr_imgs, tr_lbls, tr_names = loadall(datadir, data['train'])
     te_imgs, te_lbls, te_names = loadall(datadir, data['test'])
@@ -51,7 +52,7 @@ def load(datadir, datafile):
     )
 
 
-def flipped(X, y, n, le, old, new):
+def flipped_classes(X, y, n, le, old, new):
     """
     Horizontally flips all images in `X` which are labeled as `old` and label them as `new`.
     Returns the flipped X, y, n.
@@ -64,13 +65,13 @@ def flipped(X, y, n, le, old, new):
     )
 
 
-def flipall(X, y, n, le, flips):
+def flipall_classes(X, y, n, le, flips):
     """
     Applies all `flips` to the whole dataset X, y, n and returns the augmented dataset.
     """
     fx, fy, fn = [], [], []
     for old, new in flips:
-        a, b, c = flipped(X, y, n, le, old, new)
+        a, b, c = flipped_classes(X, y, n, le, old, new)
         fx.append(a) ; fy.append(b) ; fn.append(c)
     return np.concatenate([X] + fx), np.concatenate([y] + fy), n + sum(fn, tuple())
 
@@ -78,55 +79,61 @@ def flipall(X, y, n, le, flips):
 if __name__ == '__main__':
     datadir = here('data')
 
-    print("Augmenting QMUL (Without \" - Copy\")... ")
-    Xtr, ytr, ntr, Xte, yte, nte, le = load(datadir, 'QMULPoseHeads-nocopy.json')
-    Xtr, ytr, ntr = flipall(Xtr, ytr, ntr, le, flips=[
-        ('front', 'front'),
-        ('back', 'back'),
-        ('background', 'background'),
-        ('left', 'right'),
-        ('right', 'left'),
-    ])
-    pickle.dump((Xtr, Xte, ytr, yte, ntr, nte, le),
-                gzip.open(os.path.join(datadir, 'QMULPoseHeads-wflip.pkl.gz'), 'wb+'))
-    print(len(Xtr))
+    todos = sys.argv[1:] if len(sys.argv) > 1 else ['QMUL', 'HOCoffee', 'HOC', 'HIIT', 'TownCentre']
 
-    print("Augmenting HOCoffee... ")
-    Xtr, ytr, ntr, Xte, yte, nte, le = load(datadir, 'HOCoffee.json')
-    Xtr, ytr, ntr = flipall(Xtr, ytr, ntr, le, flips=[
-        ('frnt', 'frnt'),
-        ('rear', 'rear'),
-        ('left', 'rght'),
-        ('rght', 'left'),
-        ('frlf', 'frrg'),
-        ('frrg', 'frlf'),
-    ])
-    pickle.dump((Xtr, Xte, ytr, yte, ntr, nte, le),
-                gzip.open(os.path.join(datadir, 'HOCoffee-wflip.pkl.gz'), 'wb+'))
-    print(len(Xtr))
+    if 'QMUL' in todos:
+        print("Augmenting QMUL (Without \" - Copy\")... ")
+        Xtr, ytr, ntr, Xte, yte, nte, le = load_tosato(datadir, 'QMULPoseHeads-nocopy.json')
+        Xtr, ytr, ntr = flipall_classes(Xtr, ytr, ntr, le, flips=[
+            ('front', 'front'),
+            ('back', 'back'),
+            ('background', 'background'),
+            ('left', 'right'),
+            ('right', 'left'),
+        ])
+        pickle.dump((Xtr, Xte, ytr, yte, ntr, nte, le),
+                    gzip.open(pjoin(datadir, 'QMULPoseHeads-wflip.pkl.gz'), 'wb+'))
+        print(len(Xtr))
 
-    print("Augmenting HOC... ")
-    Xtr, ytr, ntr, Xte, yte, nte, le = load(datadir, 'HOC.json')
-    Xtr, ytr, ntr = flipall(Xtr, ytr, ntr, le, flips=[
-        ('back', 'back'),
-        ('front', 'front'),
-        ('left', 'right'),
-        ('right', 'left'),
-    ])
-    pickle.dump((Xtr, Xte, ytr, yte, ntr, nte, le),
-                gzip.open(os.path.join(datadir, 'HOC-wflip.pkl.gz'), 'wb+'))
-    print(len(Xtr))
+    if 'HOCoffee' in todos:
+        print("Augmenting HOCoffee... ")
+        Xtr, ytr, ntr, Xte, yte, nte, le = load_tosato(datadir, 'HOCoffee.json')
+        Xtr, ytr, ntr = flipall_classes(Xtr, ytr, ntr, le, flips=[
+            ('frnt', 'frnt'),
+            ('rear', 'rear'),
+            ('left', 'rght'),
+            ('rght', 'left'),
+            ('frlf', 'frrg'),
+            ('frrg', 'frlf'),
+        ])
+        pickle.dump((Xtr, Xte, ytr, yte, ntr, nte, le),
+                    gzip.open(pjoin(datadir, 'HOCoffee-wflip.pkl.gz'), 'wb+'))
+        print(len(Xtr))
 
-    print("Augmenting HIIT... ")
-    Xtr, ytr, ntr, Xte, yte, nte, le = load(datadir, 'HIIT6HeadPose.json')
-    Xtr, ytr, ntr = flipall(Xtr, ytr, ntr, le, flips=[
-        ('frnt', 'frnt'),
-        ('rear', 'rear'),
-        ('left', 'rght'),
-        ('rght', 'left'),
-        ('frlf', 'frrg'),
-        ('frrg', 'frlf'),
-    ])
-    pickle.dump((Xtr, Xte, ytr, yte, ntr, nte, le),
-                gzip.open(os.path.join(datadir, 'HIIT-wflip.pkl.gz'), 'wb+'))
-    print(len(Xtr))
+    if 'HOC' in todos:
+        print("Augmenting HOC... ")
+        Xtr, ytr, ntr, Xte, yte, nte, le = load_tosato(datadir, 'HOC.json')
+        Xtr, ytr, ntr = flipall_classes(Xtr, ytr, ntr, le, flips=[
+            ('back', 'back'),
+            ('front', 'front'),
+            ('left', 'right'),
+            ('right', 'left'),
+        ])
+        pickle.dump((Xtr, Xte, ytr, yte, ntr, nte, le),
+                    gzip.open(pjoin(datadir, 'HOC-wflip.pkl.gz'), 'wb+'))
+        print(len(Xtr))
+
+    if 'HIIT' in todos:
+        print("Augmenting HIIT... ")
+        Xtr, ytr, ntr, Xte, yte, nte, le = load_tosato(datadir, 'HIIT6HeadPose.json')
+        Xtr, ytr, ntr = flipall_classes(Xtr, ytr, ntr, le, flips=[
+            ('frnt', 'frnt'),
+            ('rear', 'rear'),
+            ('left', 'rght'),
+            ('rght', 'left'),
+            ('frlf', 'frrg'),
+            ('frrg', 'frlf'),
+        ])
+        pickle.dump((Xtr, Xte, ytr, yte, ntr, nte, le),
+                    gzip.open(pjoin(datadir, 'HIIT-wflip.pkl.gz'), 'wb+'))
+        print(len(Xtr))

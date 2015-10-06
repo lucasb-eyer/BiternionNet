@@ -59,3 +59,5 @@ Simply run this script without any arguments.
 It will load all the raw data, apply horizontal flip augmentation and then save the data into gzipped pickles for easier use from notebooks.
 This can take some time, even on fast machines.
 It's not optimized and took ~50min on my high-end desktop, but it's a one-off thing so just read some paper while it's working.
+
+You can optionally specify the name of one or more datasets as arguments and only those will be processed, e.g. `./prepare_data.py QMUL HIIT`.
