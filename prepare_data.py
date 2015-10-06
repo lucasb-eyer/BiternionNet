@@ -3,6 +3,8 @@
 from lbtoolbox.util import flipany
 
 import os
+import sys
+import re
 import inspect
 import json
 import pickle
@@ -34,6 +36,10 @@ def imread(fname, resize=None):
     return im.astype(np.float32) / 256
 
 
+def scale_all(images, size=(50, 50)):
+    return [cv2.resize(im, size, interpolation=cv2.INTER_LANCZOS4) for im in images]
+
+
 def loadall(datadir, data):
     return zip(*[[imread(pjoin(datadir, name)), lbl, name] for lbl, files in data.items() for name in files])
 
@@ -50,6 +56,37 @@ def load_tosato(datadir, datafile):
         np.array(te_imgs), le.transform(te_lbls).astype(np.int32), te_names,
         le
     )
+
+
+def load_towncentre(datadir, normalize_angles=True):
+    panre = re.compile('pan = ([+-]?\d+\.\d+)\n')
+    valre = re.compile('valid = ([01])\n')
+    angles = []
+    images = []
+    names = []
+    for father in os.listdir(datadir):
+      try:
+        for son in os.listdir(pjoin(datadir, father)):
+            if not son.endswith('.txt'):
+                continue
+
+            lpan, lval = open(pjoin(datadir, father, son)).readlines()
+            if int(valre.match(lval).group(1)) == 0:
+                continue
+
+            angles.append(float(panre.match(lpan).group(1)))
+            # Now search for the corresponding filename, unfortunately, it has more numbers encoded...
+            fnames = [f for f in os.listdir(pjoin(datadir, father)) if f.startswith(son.split('.')[0]) and not f.endswith('.txt')]
+            assert len(fnames) == 1, "lolwut"
+            names.append(fnames[0])
+            images.append(cv2.imread(pjoin(datadir, father, fnames[0]), flags=cv2.IMREAD_COLOR))
+      except NotADirectoryError:
+        pass
+
+    if normalize_angles:
+        angles = [(a + 360*2) % 360 for a in angles]
+
+    return images, angles, names
 
 
 def flipped_classes(X, y, n, le, old, new):
@@ -74,6 +111,20 @@ def flipall_classes(X, y, n, le, flips):
         a, b, c = flipped_classes(X, y, n, le, old, new)
         fx.append(a) ; fy.append(b) ; fn.append(c)
     return np.concatenate([X] + fx), np.concatenate([y] + fy), n + sum(fn, tuple())
+
+
+def flipall_images(images):
+    """
+    Horizontally flips all given `images`, assuming `images` to be a list of HWC tensors.
+    """
+    return [flipany(img, dim=1) for img in images]
+
+
+def flipall_angles(angles):
+    """
+    Horizontally flips all angles in the `angles` array.
+    """
+    return [360 - a for a in angles]
 
 
 if __name__ == '__main__':
@@ -137,3 +188,18 @@ if __name__ == '__main__':
         pickle.dump((Xtr, Xte, ytr, yte, ntr, nte, le),
                     gzip.open(pjoin(datadir, 'HIIT-wflip.pkl.gz'), 'wb+'))
         print(len(Xtr))
+
+    if 'TownCentre' in todos:
+        print("Augmenting TownCentre... ")
+        bbtc_img, bbtc_a, bbtc_n = load_towncentre('data/TownCentreHeadImages')
+        bbtc_img50 = scale_all(bbtc_img, (50, 50))
+
+        Xtc = np.array(bbtc_img50 + flipall_images(bbtc_img50))
+        ytc = np.array(bbtc_a + flipall_angles(bbtc_a))
+        ntc = bbtc_n + bbtc_n
+
+        # BHWC -> BCHW
+        Xtc = np.rollaxis(Xtc, 3, 1)
+
+        pickle.dump((Xtc, ytc, ntc),
+                    gzip.open(pjoin(datadir, 'TownCentre.pkl.gz'), 'wb+'))

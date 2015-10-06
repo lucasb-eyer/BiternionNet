@@ -33,4 +33,7 @@ if __name__ == '__main__':
     download_extract(baseurl, 'IHDPHeadPose.tar.bz2', into=datadir)
     download_extract(baseurl, 'QMULPoseHeads.tar.bz2', into=datadir)
 
+    # Second, Benfold's TownCentre dataset.
+    download_extract(baseurl, 'TownCentreHeadImages.tar.bz2', into=datadir)
+
     print("Done.")
