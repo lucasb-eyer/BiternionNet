@@ -53,6 +53,12 @@ Given the above, I exhaustively searched for mirroring in the dataset but found 
 
 Besides the above, this notebook also plots the label distributions, which is mildly interesting.
 
+## `Inspection - Regression.ipynb`
+
+This notebook takes a look at Tosato's orientation regression dasets (IDIAP, CAVIAR) and Benfold's dataset (TownCentre).
+Its purpose is to look at statistics of the dataset in order to determine whether they're well suited or not.
+Protip: they're not.
+
 ## `prepare_data.py`
 
 Simply run this script without any arguments.
