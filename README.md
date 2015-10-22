@@ -59,6 +59,9 @@ This notebook takes a look at Tosato's orientation regression dasets (IDIAP, CAV
 Its purpose is to look at statistics of the dataset in order to determine whether they're well suited or not.
 Protip: they're not.
 
+- `IDIAP`: Appears to already have flip-augmentation, even though there's no mention of it in Tosato's paper.
+- `CAVIAR`: The data is so weird I don't really want to do much with it. So no augmentation.
+
 ## `prepare_data.py`
 
 Simply run this script without any arguments.

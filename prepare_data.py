@@ -13,7 +13,9 @@ from os.path import join as pjoin
 
 import cv2
 import numpy as np
+from scipy.io import loadmat
 from sklearn.preprocessing import LabelEncoder
+import h5py
 
 
 def here(f):
@@ -44,7 +46,7 @@ def loadall(datadir, data):
     return zip(*[[imread(pjoin(datadir, name)), lbl, name] for lbl, files in data.items() for name in files])
 
 
-def load_tosato(datadir, datafile):
+def load_tosato_clf(datadir, datafile):
     data = json.load(open(pjoin(datadir, datafile)))
 
     tr_imgs, tr_lbls, tr_names = loadall(datadir, data['train'])
@@ -56,6 +58,64 @@ def load_tosato(datadir, datafile):
         np.array(te_imgs), le.transform(te_lbls).astype(np.int32), te_names,
         le
     )
+
+
+def matlab_array(mat, ref, dtype):
+    N = len(ref)
+    arr = np.empty(N, dtype=dtype)
+    for i in range(N):
+        arr[i] = mat[ref[i,0]][0,0]
+    return arr
+
+
+def matlab_string(obj):
+    return ''.join(chr(c) for c in obj[:,0])
+
+
+def matlab_strings(mat, ref):
+    return [matlab_string(mat[r]) for r in ref[:,0]]
+
+
+def load_tosato_idiap(datadir, datafile):
+    mat_full = h5py.File(pjoin(datadir, datafile))
+
+    def load(traintest):
+        container = mat_full['or_label_' + traintest]
+        pan  = matlab_array(mat_full, container['pan'],  np.float32)
+        tilt = matlab_array(mat_full, container['tilt'], np.float32)
+        roll = matlab_array(mat_full, container['roll'], np.float32)
+        names = matlab_strings(mat_full, container['name'])
+        X = np.array([imread(pjoin(datadir, traintest, name)) for name in names])
+        return X, pan, tilt, roll, names
+
+    return load('train'), load('test')
+
+
+def matlab_vector(mat, col, dtype):
+    N = len(mat)
+    vec = np.empty(N, dtype=dtype)
+    for i in range(N):
+        vec[i] = mat[i][col][0,0]
+    return vec
+
+
+def matlab_strings2(mat, col):
+    return [m[col][0] for m in mat]
+
+
+def load_tosato_caviar(datadir, datafile):
+    mat = loadmat(pjoin(datadir, datafile))
+
+    def load(traintest):
+        gazes = matlab_vector(mat['or_label_' + traintest][0], 0, np.float32)
+        xcs = matlab_vector(mat['or_label_' + traintest][0], 1, np.float32)
+        ycs = matlab_vector(mat['or_label_' + traintest][0], 2, np.float32)
+        sizes = matlab_vector(mat['or_label_' + traintest][0], 3, np.float32)
+        names = matlab_strings2(mat['or_label_' + traintest][0], 4)
+        X = np.array([imread(pjoin(datadir, traintest, name + '.jpg')) for name in names])
+        return X, gazes, xcs, ycs, sizes, names
+
+    return load('train'), load('test')
 
 
 def load_towncentre(datadir, normalize_angles=True):
@@ -130,11 +190,11 @@ def flipall_angles(angles):
 if __name__ == '__main__':
     datadir = here('data')
 
-    todos = sys.argv[1:] if len(sys.argv) > 1 else ['QMUL', 'HOCoffee', 'HOC', 'HIIT', 'TownCentre']
+    todos = sys.argv[1:] if len(sys.argv) > 1 else ['QMUL', 'HOCoffee', 'HOC', 'HIIT', 'IDIAP', 'CAVIAR', 'TownCentre']
 
     if 'QMUL' in todos:
         print("Augmenting QMUL (Without \" - Copy\")... ")
-        Xtr, ytr, ntr, Xte, yte, nte, le = load_tosato(datadir, 'QMULPoseHeads-nocopy.json')
+        Xtr, ytr, ntr, Xte, yte, nte, le = load_tosato_clf(datadir, 'QMULPoseHeads-nocopy.json')
         Xtr, ytr, ntr = flipall_classes(Xtr, ytr, ntr, le, flips=[
             ('front', 'front'),
             ('back', 'back'),
@@ -148,7 +208,7 @@ if __name__ == '__main__':
 
     if 'HOCoffee' in todos:
         print("Augmenting HOCoffee... ")
-        Xtr, ytr, ntr, Xte, yte, nte, le = load_tosato(datadir, 'HOCoffee.json')
+        Xtr, ytr, ntr, Xte, yte, nte, le = load_tosato_clf(datadir, 'HOCoffee.json')
         Xtr, ytr, ntr = flipall_classes(Xtr, ytr, ntr, le, flips=[
             ('frnt', 'frnt'),
             ('rear', 'rear'),
@@ -163,7 +223,7 @@ if __name__ == '__main__':
 
     if 'HOC' in todos:
         print("Augmenting HOC... ")
-        Xtr, ytr, ntr, Xte, yte, nte, le = load_tosato(datadir, 'HOC.json')
+        Xtr, ytr, ntr, Xte, yte, nte, le = load_tosato_clf(datadir, 'HOC.json')
         Xtr, ytr, ntr = flipall_classes(Xtr, ytr, ntr, le, flips=[
             ('back', 'back'),
             ('front', 'front'),
@@ -176,7 +236,7 @@ if __name__ == '__main__':
 
     if 'HIIT' in todos:
         print("Augmenting HIIT... ")
-        Xtr, ytr, ntr, Xte, yte, nte, le = load_tosato(datadir, 'HIIT6HeadPose.json')
+        Xtr, ytr, ntr, Xte, yte, nte, le = load_tosato_clf(datadir, 'HIIT6HeadPose.json')
         Xtr, ytr, ntr = flipall_classes(Xtr, ytr, ntr, le, flips=[
             ('frnt', 'frnt'),
             ('rear', 'rear'),
@@ -188,6 +248,24 @@ if __name__ == '__main__':
         pickle.dump((Xtr, Xte, ytr, yte, ntr, nte, le),
                     gzip.open(pjoin(datadir, 'HIIT-wflip.pkl.gz'), 'wb+'))
         print(len(Xtr))
+
+    if 'IDIAP' in todos:
+        print("Augmenting IDIAP... (lol nope, just converting)")
+        # Since this one appears to already have been flipped horizontally, there's nothing to be done.
+        data = load_tosato_idiap(pjoin(datadir, 'IHDPHeadPose'), 'or_label_full.mat')
+        # Can't gzip due to this [Python bug](https://bugs.python.org/issue23306).
+        pickle.dump(data, open(pjoin(datadir, 'IDIAP.pkl'), 'wb+'))
+        print(len(data[0][0]))
+
+    if 'CAVIAR' in todos:
+        print("Augmenting CAVIAR... (all hope is lost, no augmentation is done)")
+        data = load_tosato_caviar(pjoin(datadir, 'CAVIARShoppingCenterFull'), 'or_label.mat')
+        pickle.dump(data, gzip.open(pjoin(datadir, 'CAVIAR-c.pkl.gz'), 'wb+'))
+        print(len(data[0][0]))
+        data = load_tosato_caviar(pjoin(datadir, 'CAVIARShoppingCenterFullOccl'), 'or_label.mat')
+        pickle.dump(data, gzip.open(pjoin(datadir, 'CAVIAR-o.pkl.gz'), 'wb+'))
+        print(len(data[0][0]))
+
 
     if 'TownCentre' in todos:
         print("Augmenting TownCentre... ")
