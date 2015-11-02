@@ -10,16 +10,18 @@ from lbtoolbox.util import batched
 from lbtoolbox.plotting import liveplot, annotline
 
 
-def plotcost(costs):
+def plotcost(costs, title):
     fig, ax = plt.subplots()
     line, = ax.plot(1+np.arange(len(costs)), costs, label='Training cost')
     ax.set_xlabel('Epochs')
     ax.set_ylabel('Cost')
     annotline(ax, line, np.min)
+    if title:
+        fig.suptitle(title, fontsize=16)
     return fig
 
 
-def dotrain(model, crit, aug, Xtr, ytr, nepochs=50, batchsize=100):
+def dotrain(model, crit, aug, Xtr, ytr, nepochs=50, batchsize=100, title=None):
     opt = df.AdaDelta(rho=.95, eps=1e-7, lr=1)
 
     progress = IntProgress(value=0, min=0, max=nepochs, description='Training:')
@@ -41,7 +43,7 @@ def dotrain(model, crit, aug, Xtr, ytr, nepochs=50, batchsize=100):
         costs.append(np.mean(batchcosts))
         progress.value = e+1
 
-        liveplot(plotcost, costs)
+        liveplot(plotcost, costs, title)
     return costs
 
 

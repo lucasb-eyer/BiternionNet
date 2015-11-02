@@ -75,3 +75,15 @@ You can optionally specify the name of one or more datasets as arguments and onl
 
 Reproduction of the experiments on Tosato's benchmark datasets.
 There's nothing really interesting here, just reproducibility.
+
+## `Experiments - TownCentre.ipynb`
+
+Reproduction of the experiments on Benfold's TownCentre dataset.
+
+This is much more interesting, as this analyses both the Biternion output
+as well as the von-Mises criterion.
+
+One caveat is that because there's no official train/test split, the results
+will vary every run due to the random split. With only ~7k training data and
+less than 1k test data, the variance may be considerable.
+The relative improvement remains unchanged, though.
