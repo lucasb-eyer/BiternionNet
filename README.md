@@ -19,14 +19,14 @@ For running the experiments, you'll need to install recent versions of at least 
 I've written a [tutorial on installing all of them](http://lb.eyer.be/a/sci-env.html).
 You'll also need to clone and install my own toolbox(es):
 
-- DeepFried: `pip install git+https://github.com/lucasb-eyer/DeepFried.git`
+- DeepFried2: `pip install git+https://github.com/lucasb-eyer/DeepFried2.git`
 - lbtoolbox: `pip install git+https://github.com/lucasb-eyer/lbtoolbox.git`
 
 Since most of my experiments are written in Jupyter notebook, you can directly look at them on Github or start a local server:
 
 ```
 cd THIS_REPO
-ipython notebook
+jupyter notebook
 ```
 
 # What's what?
@@ -70,3 +70,8 @@ This can take some time, even on fast machines.
 It's not optimized and took ~50min on my high-end desktop, but it's a one-off thing so just read some paper while it's working.
 
 You can optionally specify the name of one or more datasets as arguments and only those will be processed, e.g. `./prepare_data.py QMUL HIIT`.
+
+## `Experiments - Tosato.ipynb`
+
+Reproduction of the experiments on Tosato's benchmark datasets.
+There's nothing really interesting here, just reproducibility.
