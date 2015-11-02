@@ -87,3 +87,9 @@ One caveat is that because there's no official train/test split, the results
 will vary every run due to the random split. With only ~7k training data and
 less than 1k test data, the variance may be considerable.
 The relative improvement remains unchanged, though.
+
+## The final experiment
+
+Unfortunately, I can't include the final experiment (training on labmates and
+testing on me) due to privacy reasons. I may upload a pre-trained model in the
+future though.
