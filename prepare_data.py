@@ -194,7 +194,7 @@ if __name__ == '__main__':
 
     if 'QMUL' in todos:
         print("Augmenting QMUL (Without \" - Copy\")... ")
-        Xtr, ytr, ntr, Xte, yte, nte, le = load_tosato_clf(datadir, 'QMULPoseHeads-nocopy.json')
+        Xtr, ytr, ntr, Xte, yte, nte, le = load_tosato_clf(datadir, 'QMULPoseHeads.json')
         Xtr, ytr, ntr = flipall_classes(Xtr, ytr, ntr, le, flips=[
             ('front', 'front'),
             ('back', 'back'),
